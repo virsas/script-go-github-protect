@@ -51,9 +51,14 @@ func setProtectionOptions() *github.ProtectionRequest {
 			DismissStaleReviews:          enabled,
 			RequireCodeOwnerReviews:      enabled,
 			RequiredApprovingReviewCount: 1,
+			BypassPullRequestAllowancesRequest: &github.BypassPullRequestAllowancesRequest{
+				Users: []string{"smoravcik"},
+				Teams: []string{},
+				Apps:  []string{},
+			},
 		},
 		RequiredConversationResolution: &enabled,
-		EnforceAdmins:                  enabled,
+		EnforceAdmins:                  false,
 	}
 
 	return opt
