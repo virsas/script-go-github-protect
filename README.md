@@ -5,8 +5,9 @@ Golang script to protect all repositories in single Organization
 ## .env configuration
 
 ``` bash
-GITHUB_ORG="example"
-GITHUB_TOKEN="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxx"
+ORG="example"
+USER="myself"
+TOKEN="xxx_xxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
 ## run

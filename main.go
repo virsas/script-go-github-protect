@@ -31,10 +31,15 @@ func main() {
 		panic(err)
 	}
 
+	options, err := setProtectionOptions()
+	if err != nil {
+		panic(err)
+	}
+
 	for _, repo := range repos {
 		fmt.Println("#################")
 		fmt.Println(*repo.Name)
-		err = setGithubProtection(ctx, client, *repo.Name, "main", setProtectionOptions())
+		err = setGithubProtection(ctx, client, *repo.Name, "main", options)
 		if err != nil {
 			fmt.Println(err)
 			break
@@ -43,8 +48,16 @@ func main() {
 	}
 }
 
-func setProtectionOptions() *github.ProtectionRequest {
+func setProtectionOptions() (*github.ProtectionRequest, error) {
 	var enabled bool = true
+
+	var adminUser string
+	adminUserValue, adminUserPresent := os.LookupEnv("USER")
+	if adminUserPresent {
+		adminUser = adminUserValue
+	} else {
+		return nil, errors.New("missing ENV Variable USER")
+	}
 
 	opt := &github.ProtectionRequest{
 		RequiredPullRequestReviews: &github.PullRequestReviewsEnforcementRequest{
@@ -52,7 +65,7 @@ func setProtectionOptions() *github.ProtectionRequest {
 			RequireCodeOwnerReviews:      enabled,
 			RequiredApprovingReviewCount: 1,
 			BypassPullRequestAllowancesRequest: &github.BypassPullRequestAllowancesRequest{
-				Users: []string{"smoravcik"},
+				Users: []string{adminUser},
 				Teams: []string{},
 				Apps:  []string{},
 			},
@@ -61,16 +74,16 @@ func setProtectionOptions() *github.ProtectionRequest {
 		EnforceAdmins:                  false,
 	}
 
-	return opt
+	return opt, nil
 }
 
 func getGithubClient(c context.Context) (*github.Client, error) {
 	var githubToken string
-	githubTokenValue, githubTokenPresent := os.LookupEnv("GITHUB_TOKEN")
+	githubTokenValue, githubTokenPresent := os.LookupEnv("TOKEN")
 	if githubTokenPresent {
 		githubToken = githubTokenValue
 	} else {
-		return nil, errors.New("missing ENV Variable GITHUB_TOKEN")
+		return nil, errors.New("missing ENV Variable TOKEN")
 	}
 
 	ts := oauth2.StaticTokenSource(
@@ -85,11 +98,11 @@ func getGithubClient(c context.Context) (*github.Client, error) {
 
 func getGithubRepos(c context.Context, client *github.Client) ([]*github.Repository, error) {
 	var organization string
-	organizationValue, organizationPresent := os.LookupEnv("GITHUB_ORG")
+	organizationValue, organizationPresent := os.LookupEnv("ORG")
 	if organizationPresent {
 		organization = organizationValue
 	} else {
-		return nil, errors.New("missing ENV Variable GITHUB_ORG")
+		return nil, errors.New("missing ENV Variable ORG")
 	}
 
 	opt := &github.RepositoryListByOrgOptions{
@@ -115,11 +128,11 @@ func getGithubRepos(c context.Context, client *github.Client) ([]*github.Reposit
 
 func setGithubProtection(c context.Context, client *github.Client, repo string, branch string, opt *github.ProtectionRequest) error {
 	var organization string
-	organizationValue, organizationPresent := os.LookupEnv("GITHUB_ORG")
+	organizationValue, organizationPresent := os.LookupEnv("ORG")
 	if organizationPresent {
 		organization = organizationValue
 	} else {
-		return errors.New("missing ENV Variable GITHUB_ORG")
+		return errors.New("missing ENV Variable ORG")
 	}
 
 	_, _, err := client.Repositories.UpdateBranchProtection(c, organization, repo, branch, opt)
